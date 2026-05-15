@@ -4,7 +4,9 @@ const auth = require('../middleware/auth');
 
 router.get('/', auth, async (req, res) => {
   try {
-    const interviews = await Interview.find({ user: req.user.id }).populate('application');
+    const interviews = await Interview.find({ user: req.user.id })
+      .populate('application')
+      .sort({ scheduledAt: 1 });
     res.json(interviews);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -14,7 +16,21 @@ router.get('/', auth, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const interview = await Interview.create({ ...req.body, user: req.user.id });
-    res.status(201).json(interview);
+    const populated = await interview.populate('application');
+    res.status(201).json(populated);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const interview = await Interview.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.id },
+      req.body,
+      { new: true }
+    ).populate('application');
+    res.json(interview);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
